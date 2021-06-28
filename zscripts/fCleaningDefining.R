@@ -105,7 +105,7 @@ sps_iucn <- function(data, cost) {
   # Loop
     for(i in 1:length(features)) {
       single <- sps[sps$feature == features[i],]
-      single2 <-single %>%
+      single2 <- single %>%
         dplyr::mutate_(.dots = setNames(single, as.character(features[i])))
       df_list[[i]] <- left_join(out, single2, "cellsID") %>%
         mutate_all(~replace(., is.na(.), 0)) %>%
