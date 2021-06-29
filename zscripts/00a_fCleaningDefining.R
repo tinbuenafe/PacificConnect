@@ -13,6 +13,7 @@ library(prioritizr)
 library(stringr)
 
 source("zscripts/PacificConnect_HelpR.R")
+mpas <- readRDS("Output/MPAs/PacificOcean_MPAs.rds")
 
 ####################################################################################
 ####### 1a. IUCN/MICO Correct type object (general NO Provninces NO Nodes)
