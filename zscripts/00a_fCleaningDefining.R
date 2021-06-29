@@ -45,7 +45,7 @@ iucn_mico <- function(data, cost) {
 mico2 <- function(data, cost) {
   # Cost
     out <- readRDS(cost) %>%
-      dplyr::select(cellsID, cost)
+    dplyr::select(cellsID, cost)
   # Conservation features data manipulation
     sps <- readRDS(data) %>%
       dplyr::mutate(feature = str_remove_all(string = basename(data), pattern = ".rds")) %>% 
@@ -69,9 +69,9 @@ mico2 <- function(data, cost) {
         dplyr::arrange(cellsID) %>%
         dplyr::select(-cost, -feature, -geometry, -cellsID)
     }
-    fll <- do.call(cbind, fl) %>% 
-      as_tibble()
-    return(fll)
+  fll <- do.call(cbind, fl) %>% 
+    as_tibble()
+  return(fll)
 }
 
 ####################################################################################
