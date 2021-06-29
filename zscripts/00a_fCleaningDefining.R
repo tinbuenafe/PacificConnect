@@ -1,4 +1,7 @@
-
+# This code was written by Isaac Brito-Morales (i.britomorales@uq.edu.au/ibritomorales@gmail.com)
+# Please do not distribute this code without permission.
+# NO GUARANTEES THAT CODE IS CORRECT
+# Caveat Emptor!
 
 library(tibble)
 library(sf)
@@ -9,15 +12,12 @@ library(data.table)
 library(prioritizr)
 library(stringr)
 
-
-
-
-
+source("zscripts/PacificConnect_HelpR.R")
 
 ####################################################################################
-####### 1a. MICO Correct type object (general no NODES)
+####### 1a. IUCN/MICO Correct type object (general NO Provninces NO Nodes)
 ####################################################################################    
-mico1 <- function(data, cost) {
+iucn_mico <- function(data, cost) {
   # Cost
     out <- readRDS(cost) %>%
       dplyr::select(cellsID, cost)
@@ -29,6 +29,7 @@ mico1 <- function(data, cost) {
       dplyr::select(-geometry)
     sps2 <- sps %>% 
       dplyr::mutate_(.dots = setNames(sps, as.character(unique(sps$feature))))
+    sps2[,3] <- 1
     sps3 <- left_join(out, sps2, "cellsID") %>%
       mutate_all(~replace(., is.na(.), 0)) %>%
       as.tibble() %>%
@@ -60,6 +61,7 @@ mico2 <- function(data, cost) {
         dplyr::filter(feature == nds[i])
       f2 <- f1 %>% 
         dplyr::mutate_(.dots = setNames(f1, nds[i]))
+      f2[,3] <- 1
       fl[[i]] <- left_join(out, f2, "cellsID") %>%
         mutate_all(~replace(., is.na(.), 0)) %>%
         as.tibble() %>%
@@ -71,24 +73,78 @@ mico2 <- function(data, cost) {
     return(fll)
 }
 
-
-
-# Reading the path where features are
-dirF <- list.files(path = "Output/FeaturesMiCO", pattern = ".rds", full.names = TRUE)
-fl <- vector("list", length = length(dirF))
-for(i in seq_along(fl)) { 
-  fl[[i]] <- mico1(data = dirF[i], cost = "Output/Cost/costlayer.rds")
+####################################################################################
+####### 2a. tarrgets IUCN (general NO provinces)
+####################################################################################
+trg_iucn <- function(data, iucn_df, iucn_target, nsp) {
+  Fsf <- readRDS(data) %>% 
+    as_tibble() %>% 
+    dplyr::select(-geometry)
+  sps <- gather(data = Fsf, "feature", "value", -c(cellsID, cost)) %>% 
+    arrange(cellsID)
+  features <- unique(sps$feature)
+  # Targets 
+  targets <- sps %>% 
+    dplyr::filter(value == 1) %>% 
+    dplyr::group_by(feature) %>%
+    dplyr::summarise(cells = n()) %>% 
+    dplyr::mutate(targets = (1 - ((cells/max(cells)) * (1 - 0.10)))) %>% 
+    dplyr::arrange(targets)
+  targets <- targets[order(match(targets$feature, features)),]
+  targets$scientific_name <- nsp$name1
+  # Reading IUCN .csv and filtering by Threatened categories
+  iucn <- fread(iucn_df, stringsAsFactors = FALSE) %>% 
+    dplyr::select(scientific_name, category) %>%
+    dplyr::filter(scientific_name %in%  unique(targets$scientific_name)) %>% 
+    as_tibble()
+  iucn <- distinct(iucn, scientific_name, .keep_all = TRUE) %>% 
+    dplyr::mutate(target = ifelse(category %in% c("EX","EW","CR","EN","VU"), 1, 0))
+  iucn[3,2] <- "LC"
+  # 
+  final <- left_join(x = targets, y = iucn,  by = "scientific_name")
+  df2 <- final %>% 
+    dplyr::group_by(feature) %>% 
+    dplyr::mutate(targets2 = ifelse(category %in% c("EX","EW","CR","EN","VU"), iucn_target, targets)) %>% # iucn_target
+    dplyr::select(feature, targets2) %>%
+    dplyr::rename(targets = targets2)
 }
 
-out <- readRDS("Output/Cost/costlayer.rds") %>%
-  dplyr::select(cellsID, cost)
-final <- do.call(cbind, fl) %>%
-  as_tibble() %>%
-  mutate(cellsID = out$cellsID) %>%
-  left_join(out, "cellsID")
-# Converting the final element into a sf object
-Fsf <- final %>%
-  st_as_sf(sf_column_name = "geometry")
-saveRDS(Fsf, "Output/PrioritisationInput/02a_MiCO.rds")
-plot(st_geometry(Fsf))
+####################################################################################
+####### 2a. tarrgets MiCO (general NO NODES)
+####################################################################################
+trg_Mico <- function(data) {
+  Fsf <- readRDS(data) %>% 
+    as_tibble() %>% 
+    dplyr::select(-geometry)
+  sps <- gather(data = Fsf, "feature", "value", -c(cellsID, cost)) %>% 
+    arrange(cellsID)
+  features <- unique(sps$feature)
+  # Targets 
+  targets <- sps %>% 
+    dplyr::filter(value == 1) %>%
+    dplyr::group_by(feature) %>%
+    dplyr::summarise(cells = n()) %>% 
+    dplyr::mutate(targets = (1 - ((cells/max(cells)) * (1 - 0.10)))) %>% 
+    dplyr::arrange(targets)
+  targets <- targets[order(match(targets$feature, features)),]
+  nodes_type <- lapply(features, function(x){f <- paste0(unlist(strsplit(x, "_"))[3], collapse = " ")})
+  targets$nodes_type <- unlist(nodes_type)
+  df3 <- targets %>% 
+    dplyr::group_by(feature) %>% 
+    dplyr::mutate(targets2 = ifelse(nodes_type == "OBS", 0.1, 
+                             ifelse(nodes_type == "MIG", 0.3,
+                             ifelse(nodes_type %in% c("FEE", "WIN", "STO"), 0.3,
+                             ifelse(nodes_type == "BRE", 0.7,0.7))))) %>% 
+    dplyr::select(feature, targets2) %>%
+    dplyr::rename(targets = targets2)
+  return(df3)
+}
+
+
+
+
+
+
+
+
 
