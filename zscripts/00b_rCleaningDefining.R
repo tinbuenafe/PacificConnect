@@ -9,7 +9,7 @@ source("zscripts/00a_fCleaningDefining.R")
 ####### 1. Running to get the correct input data for prioritizr
 ####################################################################################    
 # Reading the path where features are
-dirF <- list.files(path = "Output/FeaturesIUCNNew", pattern = ".rds", full.names = TRUE)
+dirF <- list.files(path = "Output/FeaturesMiCONewLong", pattern = ".rds", full.names = TRUE)
 fl <- vector("list", length = length(dirF))
 for(i in seq_along(fl)) {fl[[i]] <- iucn_mico(data = dirF[i], cost = "Output/Cost/costlayer.rds")}
 #  getting the cost
@@ -23,13 +23,13 @@ final <- do.call(cbind, fl) %>%
 # Converting the final element into a sf object and save it
 Fsf <- final %>%
   st_as_sf(sf_column_name = "geometry")
-saveRDS(Fsf, "Prioritisation/InputsFeatures/01a_IUCN.rds")
+saveRDS(Fsf, "Prioritisation/InputsFeatures/02c_MiCONodesLong.rds")
 
 ####################################################################################
 ####### 2. Targets
 #################################################################################### 
-tIUCN <- trg_Mico("Prioritisation/InputsFeatures/02b_MiCONodes.rds")
-  saveRDS(tMiCO, "Prioritisation/InputsTargets/03b_TRGMiCONodes.rds")
+tMiCO <- trg_Mico("Prioritisation/InputsFeatures/02c_MiCONodesLong.rds")
+  saveRDS(tMiCO, "Prioritisation/InputsTargets/03c_TRGMiCONodesLong.rds")
 
 ####################################################################################
 ####### 1. Running to get the correct input data for prioritizr
