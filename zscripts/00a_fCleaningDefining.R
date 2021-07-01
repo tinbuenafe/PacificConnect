@@ -90,9 +90,11 @@ trg_iucn <- function(data, iucn_df, iucn_target, nsp) {
     dplyr::group_by(feature) %>%
     dplyr::summarise(cells = n()) %>% 
     dplyr::mutate(targets = (1 - ((cells/max(cells)) * (1 - 0.10)))) %>% 
-    dplyr::arrange(targets)
+    dplyr::arrange(targets) %>% 
+    dplyr::mutate(name2 = unlist(lapply(strsplit(feature, "_"),  function(x) x[1])))
   targets <- targets[order(match(targets$feature, features)),]
-  targets$scientific_name <- nsp$name1
+  targets <- left_join(targets, nsp, "name2") %>% 
+    rename(scientific_name = name1)
   # Reading IUCN .csv and filtering by Threatened categories
   iucn <- fread(iucn_df, stringsAsFactors = FALSE) %>% 
     dplyr::select(scientific_name, category) %>%
@@ -111,7 +113,7 @@ trg_iucn <- function(data, iucn_df, iucn_target, nsp) {
 }
 
 ####################################################################################
-####### 2a. tarrgets MiCO (general NO NODES)
+####### 2a. tarrgets MiCO (NODES)
 ####################################################################################
 trg_Mico <- function(data) {
   Fsf <- readRDS(data) %>% 
