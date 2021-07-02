@@ -41,3 +41,7 @@ source("zscripts/00a_fCleaningDefining.R")
       add_default_solver(verbose = FALSE)
     saveRDS(p1, "Prioritisation/Problems/02c_ProblemsMiCONodesLong.rds")
     
+    
+    readRDS("Prioritisation/Problems/02b_ProblemsMiCONodes.rds") %>% 
+      add_relative_targets(0.20)
+    

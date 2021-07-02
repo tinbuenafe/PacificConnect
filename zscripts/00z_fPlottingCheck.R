@@ -44,7 +44,7 @@ for(i in seq_along(features)) {
       ggsave(paste0("Figures/FeaturesMiCO/", paste0(unique(sg$feature), ".png")), width = 15, height = 10, dpi = 300)
 }
 
-ft_IUCN <- readRDS("Prioritisation/InputsFeatures/01a_IUCN.rds")
+ft_IUCN <- readRDS("Prioritisation/InputsFeatures/01b_IUCNLong.rds")
 sps <- gather(data = ft_IUCN, "feature", "value", -c(cellsID, cost, geometry))
 features <- unique(sps$feature)
 for(i in seq_along(features)) {
@@ -65,5 +65,5 @@ for(i in seq_along(features)) {
     scale_fill_manual(values = pal,
                       name = "",
                       labels = type) +
-    ggsave(paste0("Figures/FeaturesIUCN/", paste0(unique(sg$feature), ".png")), width = 15, height = 10, dpi = 300)
+    ggsave(paste0("Figures/FeaturesIUCNNewLong/", paste0(unique(sg$feature), ".png")), width = 15, height = 10, dpi = 300)
 }
