@@ -45,3 +45,37 @@ source("zscripts/00a_fCleaningDefining.R")
     readRDS("Prioritisation/Problems/02b_ProblemsMiCONodes.rds") %>% 
       add_relative_targets(0.20)
     
+    
+####################################################################################
+####### IUCN + MiCO dataset
+####################################################################################
+  # Targets
+    trgts <- seq(0.10, 0.90, 0.10)
+    trgts_ls <- vector("list", length = length(trgts))
+    for(i in seq_along(trgts)) {
+      t1 <- trg_iucn(data = "Prioritisation/InputsFeatures/01b_IUCNLong.rds", iucn_df = "IUCN_REDLIST_2020.csv", iucn_target = trgts[i], nsp = nsp)
+      t2 <- trgt_Nodes <- readRDS("Prioritisation/InputsTargets/03c_TRGMiCONodesLong.rds")
+      trgts_ls[[i]] <- rbind(t1, t2)
+    }
+  # Problem
+    p_list <- vector("list", length = length(trgts_ls))
+    ft_iucn <- readRDS("Prioritisation/InputsFeatures/01b_IUCNLong.rds") %>% 
+      dplyr::select(-cost, -cellsID, -geometry)
+    ft_mico <- readRDS("Prioritisation/InputsFeatures/02c_MiCONodesLong.rds")
+    ft_cb <- cbind(ft_iucn, ft_mico) %>% 
+      dplyr::select(-geometry.1)
+    for(j in 1:length(p_list)) {
+      p_list[[j]] <- prioritizr::problem(ft_cb, trgts_ls[[j]]$feature, "cost") %>%
+        add_min_set_objective() %>%
+        add_relative_targets(trgts_ls[[j]]$targets) %>%
+        add_binary_decisions() %>%
+        add_locked_in_constraints(mpas$cellsID) %>% 
+        add_default_solver(verbose = FALSE)
+    }
+    names(p_list) <- trgts
+    saveRDS(p_list, "Prioritisation/Problems/03b_ProblemsIUCNMicoLong.rds")
+    
+        
+    
+
+    
