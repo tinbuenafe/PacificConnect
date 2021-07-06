@@ -89,7 +89,7 @@ trg_iucn <- function(data, iucn_df, iucn_target, nsp) {
     dplyr::filter(value == 1) %>% 
     dplyr::group_by(feature) %>%
     dplyr::summarise(cells = n()) %>% 
-    dplyr::mutate(targets = (1 - ((cells/max(cells)) * (1 - 0.10)))) %>% 
+    dplyr::mutate(targets = (iucn_target - ((cells/max(cells)) * (iucn_target - 0.10)))) %>% 
     dplyr::arrange(targets) %>% 
     dplyr::mutate(name2 = unlist(lapply(strsplit(feature, "_"),  function(x) x[1])))
   targets <- targets[order(match(targets$feature, features)),]
